@@ -1,4 +1,5 @@
 # HMS-backend
+
 Backend endpoints for Hotel Management System
 
 ## Setup
@@ -16,7 +17,8 @@ cd HMS-backend
 ```
 
 ### Running the application
-To run the frontend part of the project run the following commands in a terminal:
+
+To run the backend part of the project run the following commands in a terminal:
 
 1. Install dependencies
 
