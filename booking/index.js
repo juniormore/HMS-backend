@@ -13,9 +13,9 @@ app.get('/test', (req, res) => {
     res.send('Hello World');
 })
 
-app.get('/hotel', async (req, res) => {
+app.get('/hotelSearch', async (req, res) => {
 
-    const { location, checkInDate, checkOutDate, numberOfGuests } = req.query;
+    const { location, checkInDate, checkOutDate, numberOfGuests } = req.body;
 
     try {
       const result = await db.query(`
@@ -25,11 +25,11 @@ app.get('/hotel', async (req, res) => {
             JOIN public."Room_Type" rt ON r."RoomType_ID" = rt."RoomType_ID"
             LEFT JOIN public."Bookings" b ON r."Room_ID" = b."Room_ID" 
             AND b."Status" = 'Confirmed'
-            AND (b."checkIn_date" < :checkOutDate AND b."checkOut_date" > :checkInDate)
-        WHERE h."Location" = :location
-            AND rt."NumberOfGuests" >= :numberOfGuests
+            AND (b."checkIn_date" < '${checkOutDate}' AND b."checkOut_date" > '${checkInDate}')
+        WHERE h."Location" = '${location}'
+            AND rt."NumberOfGuests" >= ${numberOfGuests}
             AND r."Status" = TRUE
-            AND b."Booking_ID" IS NULL`, [location, checkInDate, checkOutDate, numberOfGuests]);
+            AND b."Booking_ID" IS NULL`);
       res.json(result.rows);
     } catch (err) {
       console.error(err);
