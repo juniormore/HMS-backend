@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const db = require('./db');
 
 
@@ -6,6 +7,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 
 
@@ -15,7 +17,8 @@ app.get('/test', (req, res) => {
 
 app.get('/hotelSearch', async (req, res) => {
 
-    const { location, checkInDate, checkOutDate, numberOfGuests } = req.body;
+    const { location, checkInDate, checkOutDate, numberOfGuests } = req.query;
+    console.log(location, checkInDate, checkOutDate, numberOfGuests);
 
     try {
       const result = await db.query(`
@@ -31,6 +34,7 @@ app.get('/hotelSearch', async (req, res) => {
             AND r."Status" = TRUE
             AND b."Booking_ID" IS NULL`);
       res.json(result.rows);
+      console.log(result.rows);
     } catch (err) {
       console.error(err);
       res.status(500).send('Internal Server Error');
