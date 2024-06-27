@@ -17,12 +17,18 @@ app.get('/test', (req, res) => {
 
 app.get('/hotelSearch', async (req, res) => {
 
-    const { location, checkInDate, checkOutDate, numberOfGuests } = req.query;
+    const { location, checkInDate, checkOutDate, budget, numberOfGuests } = req.query;
     console.log(location, checkInDate, checkOutDate, numberOfGuests);
 
     try {
       const result = await db.query(`
-        SELECT DISTINCT h."Hotel_ID", h."Name", h."Location", h."Rating", h."Contact_Number" 
+        SELECT h."Name" AS hotel_name, 
+              h."Location" AS hotel_location,
+              h."Image" AS hotel_image, 
+              rt."NumberOfGuests" AS number_of_guests, 
+              rt."Price" AS room_price, 
+              r."Room_ID" AS room_id, 
+              rt."Description" AS room_description 
             FROM public."Hotel" h
             JOIN public."Room" r ON h."Hotel_ID" = r."Hotel_ID"
             JOIN public."Room_Type" rt ON r."RoomType_ID" = rt."RoomType_ID"
@@ -32,6 +38,7 @@ app.get('/hotelSearch', async (req, res) => {
         WHERE h."Location" = '${location}'
             AND rt."NumberOfGuests" >= ${numberOfGuests}
             AND r."Status" = TRUE
+            AND rt."Price" <= ${budget}
             AND b."Booking_ID" IS NULL`);
       res.json(result.rows);
       console.log(result.rows);
