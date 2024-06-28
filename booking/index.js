@@ -24,11 +24,13 @@ app.get('/hotelSearch', async (req, res) => {
       const result = await db.query(`
         SELECT h."Name" AS hotel_name, 
               h."Location" AS hotel_location,
-              h."Image" AS hotel_image, 
+              h."Image" AS hotel_image,
+              h."Rating" AS hotel_rating, 
               rt."NumberOfGuests" AS number_of_guests, 
-              rt."Price" AS room_price, 
-              r."Room_ID" AS room_id, 
-              rt."Description" AS room_description 
+              rt."Price" AS room_price,
+              rt."Bedrooms" AS bedrooms,
+              rt."Bathrooms" AS bathrooms,
+              r."Room_ID" AS room_id  
             FROM public."Hotel" h
             JOIN public."Room" r ON h."Hotel_ID" = r."Hotel_ID"
             JOIN public."Room_Type" rt ON r."RoomType_ID" = rt."RoomType_ID"
