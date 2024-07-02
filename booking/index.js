@@ -48,7 +48,36 @@ app.get('/hotelSearch', async (req, res) => {
       console.error(err);
       res.status(500).send('Internal Server Error');
     }
-  });
+});
+
+app.get('/roomInformation/:room_id', async (req, res) => {
+	const { room_id }  = req.params;
+
+  try{
+    const result = await db.query(`
+        SELECT 
+            rt."Description" AS room_description,
+            rt."NumberOfGuests" AS number_of_guests,
+            rt."Price" AS room_price,
+            rt."Image1" As image_1,
+            rt."Image2" As image_2,
+            rt."Bedrooms" AS bedrooms,
+            rt."Bathrooms" AS bathrooms
+        FROM 
+            public."Room_Type" rt
+        JOIN 
+            public."Room" r ON rt."RoomType_ID" = r."RoomType_ID"
+        WHERE
+            r."Room_ID" = ${room_id}
+    `);
+
+    res.json(result.rows);
+    console.log(result.rows);
+  }catch(err){
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
 const port = process.env.PORT;
 app.listen(port, () => {console.log(`Server is running on port ${port}`)});
