@@ -56,7 +56,9 @@ app.get('/roomInformation/:room_id', async (req, res) => {
   try{
     const result = await db.query(`
         SELECT 
-            rt."Description" AS room_description,
+            rt."RoomName" AS room_name,
+            rt."Description1" AS room_description_1,
+            rt."Description2" AS room_description_2,
             rt."NumberOfGuests" AS number_of_guests,
             rt."Price" AS room_price,
             rt."Image1" As image_1,
