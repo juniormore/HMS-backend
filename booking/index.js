@@ -47,6 +47,36 @@ app.get('/hotelSearch', async (req, res) => {
     }
 });
 
+app.get('/hotelCatalog', async (req, res) => {
+
+  try {
+    const result = await db.query(`
+      SELECT h."Name" AS hotel_name, 
+            h."Location" AS hotel_location,
+            h."Image" AS hotel_image,
+            h."Rating" AS hotel_rating, 
+            rt."NumberOfGuests" AS number_of_guests, 
+            rt."Price" AS room_price,
+            rt."Bedrooms" AS bedrooms,
+            rt."Bathrooms" AS bathrooms,
+            r."Room_ID" AS room_id  
+          FROM public."Hotel" h
+          JOIN public."Room" r ON h."Hotel_ID" = r."Hotel_ID"
+          JOIN public."Room_Type" rt ON r."RoomType_ID" = rt."RoomType_ID"
+          LEFT JOIN public."Bookings" b ON r."Room_ID" = b."Room_ID" 
+          AND b."Status" = 'Confirmed'
+      WHERE 
+          r."Status" = TRUE          
+          AND b."Booking_ID" IS NULL`);
+    res.json(result.rows);
+    console.log(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Internal Server Error');
+  }
+
+});
+
 app.get('/roomInformation/:room_id', async (req, res) => {
 	const { room_id }  = req.params;
 
