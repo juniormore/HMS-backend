@@ -1,18 +1,13 @@
 const express = require('express');
-const { Pool } = require('pg');
+const db = require('./db');
+const cors = require('cors');
+require('dotenv').config();
 const app = express();
 
-const pool = new Pool({
-    user:'postgres',
-    host:'localhost',
-    database: 'HMS',
-    password:'postgres',
-    port: 5432,
-})
-
 app.use(express.json());
+app.use(cors());
 
-app.get('/test', (res, req) => {
+app.get('/test', (req, res) => {
     res.send('Hello World');
 })
 
@@ -21,7 +16,38 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/feedback',  async (req, res) => {
-    const { name, email, message } = res.body;
+    const { name, surname, email, discovery_source, improvements, rating, Suggestions } = req.body;
     
+	try{
+		const result = await db.query(`
+			INSERT INTO public."Feedback"(
+				"Hotel_ID", 
+				"Name", 
+				"Surname", 
+				"Email", 
+				"discovery_source", 
+				"Improvements",
+				"rating",
+				"Suggestions")
+			VALUES (
+                '1',
+				'${name}', 
+				'${surname}', 
+				'${email}', 
+				'${discovery_source}', 
+                '${improvements}',
+				${rating}, 
+				'${Suggestions}');
+			`);
 
+		res.status(201).send('Feedback submitted successfully.');
+		console.log(result.rows);
+
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
 })
+
+const port = process.env.PORT;
+app.listen(port, () => {console.log(`Server is running on port ${port}`)});
