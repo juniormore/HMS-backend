@@ -224,7 +224,7 @@ app.post('/booking', async (req, res) => {
 		console.log(result.rows);
 
 		//smsNotification(req, res, phone_number, message);
-		sendEmailNotification(req, res, email, message);
+		//sendEmailNotification(req, res, email, message);
 
 	}catch(err){
 		console.error(err);
@@ -275,7 +275,7 @@ async function sendEmailNotification(req, res, email, message){
 		  })
 
 		  res.status(200);
-		  
+
 	}catch(err){
 		console.error(err);
 		res.status(500).send('Internal Server Error');
