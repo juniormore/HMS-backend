@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 const db = require('./db');
 
 require('dotenv').config();
@@ -7,10 +8,6 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 app.use(cors());
-
-app.get('/test', (req, res) => {
-    res.send('Hello World');
-})
 
 // api endpoint to search for a hotel room based on search criteria
 app.get('/hotelSearch', async (req, res) => {
@@ -50,31 +47,30 @@ app.get('/hotelSearch', async (req, res) => {
 
 // api endpoint to retrieve hotel room information of all available rooms
 app.get('/hotelCatalog', async (req, res) => {
-
-  try {
-    const result = await db.query(`
-      SELECT h."Name" AS hotel_name, 
-            h."Location" AS hotel_location,
-            h."Image" AS hotel_image,
-            h."Rating" AS hotel_rating, 
-            rt."NumberOfGuests" AS number_of_guests, 
-            rt."Price" AS room_price,
-            rt."Bedrooms" AS bedrooms,
-            rt."Bathrooms" AS bathrooms,
-            r."Room_ID" AS room_id  
-          FROM public."Hotel" h
-          JOIN public."Room" r ON h."Hotel_ID" = r."Hotel_ID"
-          JOIN public."Room_Type" rt ON r."RoomType_ID" = rt."RoomType_ID"
-          LEFT JOIN public."Bookings" b ON r."Room_ID" = b."Room_ID" 
-          AND b."Status" = 'Confirmed'
-      WHERE 
-          r."Status" = TRUE          
-          AND b."Booking_ID" IS NULL`);
-    res.json(result.rows);
-    console.log(result.rows);
+	try {
+		const result = await db.query(`
+			SELECT h."Name" AS hotel_name, 
+					h."Location" AS hotel_location,
+					h."Image" AS hotel_image,
+					h."Rating" AS hotel_rating, 
+					rt."NumberOfGuests" AS number_of_guests, 
+					rt."Price" AS room_price,
+					rt."Bedrooms" AS bedrooms,
+					rt."Bathrooms" AS bathrooms,
+					r."Room_ID" AS room_id  
+				FROM public."Hotel" h
+				JOIN public."Room" r ON h."Hotel_ID" = r."Hotel_ID"
+				JOIN public."Room_Type" rt ON r."RoomType_ID" = rt."RoomType_ID"
+				LEFT JOIN public."Bookings" b ON r."Room_ID" = b."Room_ID" 
+				AND b."Status" = 'Confirmed'
+			WHERE 
+				r."Status" = TRUE          
+				AND b."Booking_ID" IS NULL`);
+		res.json(result.rows);
+		console.log(result.rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Internal Server Error');
+		console.error(err);
+		res.status(500).send('Internal Server Error');
   }
 
 });
@@ -200,7 +196,8 @@ app.post('/HotelGuest', async (req, res) => {
 
 // api endpoint to create a booking
 app.post('/booking', async (req, res) => {
-	const { booking_date, check_in_date, check_out_date, status, room_id, guest_id, payment_id } = req.body;
+	const { booking_date, check_in_date, check_out_date, status, room_id, guest_id, payment_id, phone_number } = req.body;
+	const message = "Your booking has been confirmed. Thank you for choosing us."
 
 	try{
 		const result = await db.query(`
@@ -225,11 +222,35 @@ app.post('/booking', async (req, res) => {
 		res.status(201).send('Booking created successfully');
 		console.log(result.rows);
 
+		//smsNotification(req, res, phone_number, message);
+
 	}catch(err){
 		console.error(err);
 		res.status(500).send('Internal Server Error');
 	}
 }); 
+
+async function smsNotification(req, res, phone_number, message) {
+	try {
+		const url = 'https://rest.kaelekae.com/';
+		const data = { 
+			action : "send_nnollo_sms",
+			token: process.env.SMS_API_TOKEN,
+			sender_id: process.env.SMS_SENDER_ID,
+			sms_content: message,
+			destinations: [
+				phone_number
+			]
+	  	};
+	  
+	  const response = await axios.post(url, data);
+	  res.status(200);
+	} catch (error) {
+	  console.error('Error sending data:', error);
+	  res.status(500).json({ message: 'Error' });
+	}
+  }
+  
 
 const port = process.env.PORT;
 app.listen(port, () => {console.log(`Server is running on port ${port}`)});
