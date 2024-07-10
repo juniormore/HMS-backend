@@ -111,9 +111,96 @@ app.get('/roomInformation/:room_id', async (req, res) => {
   }
 });
 
+// api endpoint to create a guest
+app.post('/guest', async (req, res) => {
+
+	const { guest_id, email, phone_number, first_name, last_name, hotel_id } = req.body;
+	const full_name = first_name + ' ' + last_name;
+
+	// check if guest already exists
+	try{
+		const result = await db.query(`
+			SELECT * FROM public."Guest" WHERE "Guest_ID" = '${guest_id}';
+		`);
+
+		if(result.rows.length > 0){
+			console.log('Guest already exists');
+			res.status(200).send('Guest already exists');
+			return;
+		}
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+		
+
+	try{
+		const result = await db.query(`
+			INSERT INTO public."Guest"(
+				"Full_Name",
+				"Contact_Number",  
+				"Email", 
+				"Guest_ID") 
+			VALUES (
+				'${full_name}',
+				${phone_number},  
+				'${email}', 
+				'${guest_id}'); 
+		`);
+
+		res.status(201).send('Guest created successfully');
+		console.log(result.rows);
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+
+	const hotelGuest = (hotel_id) => {
+		try{
+			const result = db.query(`
+				INSERT INTO public."Hotel_Guest"(
+					"Hotel_ID", 
+					"Guest_ID") 
+				VALUES (
+					${hotel_id},
+					'${guest_id}'); 
+			`);
+			console.log(result.rows);
+			res.status(201).send('Hotel Guest created successfully');
+		}catch(err){
+			console.error(err);
+			res.status(500).send('Internal Server Error');
+		}
+	
+	}
+
+});
+
+// create Hotel_Guest table record
+app.post('/HotelGuest', async (req, res) => {
+	const { hotel_id, guest_id } = req.body;
+
+	try{
+		const result = await db.query(`
+			INSERT INTO public."Hotel_Guest"(
+				"Hotel_ID", 
+				"Guest_ID") 
+			VALUES (
+				${hotel_id},
+				'${guest_id}'); 
+		`);
+
+		res.status(201).send('Hotel Guest created successfully');
+		console.log(result.rows);
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+});
+
 // api endpoint to create a booking
 app.post('/booking', async (req, res) => {
-	const { booking_date, check_in_date, check_out_date, status, room_id, guest_id } = req.body;
+	const { booking_date, check_in_date, check_out_date, status, room_id, guest_id, payment_id } = req.body;
 
 	try{
 		const result = await db.query(`
@@ -123,14 +210,16 @@ app.post('/booking', async (req, res) => {
 				"checkOut_date", 
 				"Status", 
 				"Room_ID", 
-				"Guest_ID")
+				"Guest_ID",
+        "Payment_ID")
 			VALUES (
 				'${booking_date}', 
 				'${check_in_date}', 
 				'${check_out_date}', 
 				'${status}', 
 				${room_id}, 
-				${guest_id});
+				'${guest_id}',
+        ${payment_id});
 			`);
 
 		res.status(201).send('Booking created successfully');
