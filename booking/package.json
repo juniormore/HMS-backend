@@ -17,6 +17,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "nodemon": "^3.1.4",
+    "notificationapi-node-server-sdk": "^2.2.1",
     "pg": "^8.12.0"
   }
 }

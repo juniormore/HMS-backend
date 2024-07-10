@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const notificationapi = require("notificationapi-node-server-sdk").default;
 const db = require('./db');
 
 require('dotenv').config();
@@ -196,7 +197,7 @@ app.post('/HotelGuest', async (req, res) => {
 
 // api endpoint to create a booking
 app.post('/booking', async (req, res) => {
-	const { booking_date, check_in_date, check_out_date, status, room_id, guest_id, payment_id, phone_number } = req.body;
+	const { booking_date, check_in_date, check_out_date, status, room_id, guest_id, payment_id, phone_number, email } = req.body;
 	const message = "Your booking has been confirmed. Thank you for choosing us."
 
 	try{
@@ -223,6 +224,7 @@ app.post('/booking', async (req, res) => {
 		console.log(result.rows);
 
 		//smsNotification(req, res, phone_number, message);
+		sendEmailNotification(req, res, email, message);
 
 	}catch(err){
 		console.error(err);
@@ -230,6 +232,7 @@ app.post('/booking', async (req, res) => {
 	}
 }); 
 
+// function to send sms notification
 async function smsNotification(req, res, phone_number, message) {
 	try {
 		const url = 'https://rest.kaelekae.com/';
@@ -249,8 +252,36 @@ async function smsNotification(req, res, phone_number, message) {
 	  console.error('Error sending data:', error);
 	  res.status(500).json({ message: 'Error' });
 	}
-  }
-  
+}
+
+// function to send email notification
+async function sendEmailNotification(req, res, email, message){
+	try{
+		notificationapi.init(
+			process.env.NOTIFICATION_API_CLIENT_ID, // clientId
+			process.env.NOTIFICATION_API_CLIENT_SECRET // clientSecret
+		  )
+		  
+		  notificationapi.send({
+			notificationId: 'booking_confirmation',
+			user: {
+			  id: email,
+			  email: email,
+			  number: "77777777"
+			},
+			mergeTags: {
+			  "comment": message
+			}
+		  })
+
+		  res.status(200);
+		  
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+	
+}  
 
 const port = process.env.PORT;
 app.listen(port, () => {console.log(`Server is running on port ${port}`)});
