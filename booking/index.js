@@ -12,39 +12,51 @@ app.use(cors());
 
 // api endpoint to search for a hotel room based on search criteria
 app.get('/hotelSearch', async (req, res) => {
-
-    const { location, checkInDate, checkOutDate, budget, numberOfGuests } = req.query;
-    console.log(location, checkInDate, checkOutDate, numberOfGuests);
+    const { location, district, checkInDate, checkOutDate, budget, numberOfGuests } = req.query;
+    console.log(location, district, checkInDate, checkOutDate, numberOfGuests);
 
     try {
-      const result = await db.query(`
-        SELECT h."Name" AS hotel_name, 
-              h."Location" AS hotel_location,
-              h."Image" AS hotel_image,
-              h."Rating" AS hotel_rating, 
-              rt."NumberOfGuests" AS number_of_guests, 
-              rt."Price" AS room_price,
-              rt."Bedrooms" AS bedrooms,
-              rt."Bathrooms" AS bathrooms,
-              r."Room_ID" AS room_id  
+        let query = `
+            SELECT h."Name" AS hotel_name, 
+                   h."Location" AS hotel_location,
+                   h."District" AS hotel_district,  -- Assuming you have a district column
+                   h."Image" AS hotel_image,
+                   h."Rating" AS hotel_rating, 
+                   rt."NumberOfGuests" AS number_of_guests, 
+                   rt."Price" AS room_price,
+                   rt."Bedrooms" AS bedrooms,
+                   rt."Bathrooms" AS bathrooms,
+                   r."Room_ID" AS room_id  
             FROM public."Hotel" h
             JOIN public."Room" r ON h."Hotel_ID" = r."Hotel_ID"
             JOIN public."Room_Type" rt ON r."RoomType_ID" = rt."RoomType_ID"
             LEFT JOIN public."Bookings" b ON r."Room_ID" = b."Room_ID" 
             AND b."Status" = 'Confirmed'
-            AND (b."checkIn_date" < '${checkOutDate}' AND b."checkOut_date" > '${checkInDate}')
-        WHERE h."Location" = '${location}'
-            AND rt."NumberOfGuests" >= ${numberOfGuests}
+            AND (b."checkIn_date" < $1 AND b."checkOut_date" > $2)
+            WHERE (h."Location" = $3 OR h."District" = $4)
+            AND rt."NumberOfGuests" >= $5
             AND r."Status" = TRUE
-            AND rt."Price" <= ${budget}
-            AND b."Booking_ID" IS NULL`);
-      res.json(result.rows);
-      console.log(result.rows);
+            AND rt."Price" <= $6
+            AND b."Booking_ID" IS NULL`;
+
+        const queryParams = [
+            checkOutDate,
+            checkInDate,
+            location,
+            district,
+            numberOfGuests,
+            budget
+        ];
+
+        const result = await db.query(query, queryParams);
+        res.json(result.rows);
+        console.log(result.rows);
     } catch (err) {
-      console.error(err);
-      res.status(500).send('Internal Server Error');
+        console.error(err);
+        res.status(500).send('Internal Server Error');
     }
 });
+
 
 // api endpoint to retrieve hotel room information of all available rooms
 app.get('/hotelCatalog', async (req, res) => {
