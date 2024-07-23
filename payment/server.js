@@ -15,13 +15,14 @@ const client = new paypal.core.PayPalHttpClient(environment);
 // Create order endpoint
 app.post('/create-order', async (req, res) => {
   const request = new paypal.orders.OrdersCreateRequest();
+  const  { price }  = req.body;
   request.prefer("return=representation");
   request.requestBody({
     intent: 'CAPTURE',
     purchase_units: [{
       amount: {
         currency_code: 'USD',
-        value: '25.00' // Replace with dynamic value as needed
+        value: price // Replace with dynamic value as needed
       }
     }]
   });

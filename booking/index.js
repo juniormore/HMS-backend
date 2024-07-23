@@ -17,7 +17,8 @@ app.get('/hotelSearch', async (req, res) => {
 
     try {
         let query = `
-            SELECT h."Name" AS hotel_name, 
+            SELECT h."Name" AS hotel_name,
+				   h."Hotel_ID" AS hotel_id, 
                    h."Location" AS hotel_location,
                    h."District" AS hotel_district,  -- Assuming you have a district column
                    h."Image" AS hotel_image,
@@ -123,8 +124,7 @@ app.get('/roomInformation/:room_id', async (req, res) => {
 // api endpoint to create a guest
 app.post('/guest', async (req, res) => {
 
-	const { guest_id, email, phone_number, first_name, last_name, hotel_id } = req.body;
-	const full_name = first_name + ' ' + last_name;
+	const { guest_id, email, phone_number, full_name, hotel_id } = req.body;
 
 	// check if guest already exists
 	try{
@@ -186,8 +186,24 @@ app.post('/guest', async (req, res) => {
 });
 
 // create Hotel_Guest table record
-app.post('/HotelGuest', async (req, res) => {
+app.post('/hotelGuest', async (req, res) => {
 	const { hotel_id, guest_id } = req.body;
+
+	// check if hotel guest already exists
+	try{
+		const result = await db.query(`
+			SELECT * FROM public."Hotel_Guest" WHERE "Hotel_ID" = ${hotel_id} AND "Guest_ID" = '${guest_id}';
+		`);
+
+		if(result.rows.length > 0){
+			console.log('Hotel Guest already exists');
+			res.status(200).send('Hotel Guest already exists');
+			return;
+		}
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
 
 	try{
 		const result = await db.query(`
@@ -206,6 +222,35 @@ app.post('/HotelGuest', async (req, res) => {
 		res.status(500).send('Internal Server Error');
 	}
 });
+
+// create payment record in database
+app.post('/payment', async (req, res) => {
+	const { payment_date, payment_method, guest_id , amount, payment_id } = req.body;
+  
+	try {
+	  const result = await db.query(`
+		INSERT INTO public."Payment"(
+		  "Payment_Date", 
+		  "Payment_Method", 
+		  "Guest_ID", 
+		  "Amount",
+		  "Payment_ID") 
+		VALUES (
+		  '${payment_date}',
+		  '${payment_method}',
+		  '${guest_id}',
+		  ${amount},
+		  '${payment_id}'); 
+	  `);
+  
+	  console.log(result.rows);
+	  res.status(201).send('Payment created successfully');
+	}catch(err){
+	  console.error(err);
+	  res.status(500).send('Internal Server Error');
+	}
+  
+  });
 
 // api endpoint to create a booking
 app.post('/booking', async (req, res) => {
@@ -229,13 +274,13 @@ app.post('/booking', async (req, res) => {
 				'${status}', 
 				${room_id}, 
 				'${guest_id}',
-        ${payment_id});
+        '${payment_id}');
 			`);
 
 		res.status(201).send('Booking created successfully');
 		console.log(result.rows);
 
-		//smsNotification(req, res, phone_number, message);
+		smsNotification(req, res, phone_number, message);
 		//sendEmailNotification(req, res, email, message);
 
 	}catch(err){
