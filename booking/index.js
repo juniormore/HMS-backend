@@ -10,6 +10,10 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+app.get('/test', (req, res) => {
+    res.send('Hello World');
+})
+
 // api endpoint to search for a hotel room based on search criteria
 app.get('/hotelSearch', async (req, res) => {
     const { location, district, checkInDate, checkOutDate, budget, numberOfGuests } = req.query;
@@ -340,6 +344,6 @@ async function sendEmailNotification(req, res, email, message){
 	
 }  
 
-const port = process.env.PORT;
+const port = 4000;
 app.listen(port, () => {console.log(`Server is running on port ${port}`)});
 
