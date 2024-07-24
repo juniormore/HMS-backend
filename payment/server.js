@@ -12,6 +12,9 @@ app.use(bodyParser.json());
 const environment = new paypal.core.SandboxEnvironment('AfESDRCJOJeFOnINtaN5ErFmr6hl7pFNeLoZ99trVOve6LwrlPztVJvaF5P3HLj6lcsFY5RAvb_3K2ko', 'EDht7slhX4OZzMqSm6EzgK_IBMFg09XT4LU3gwMq-ZyG-5rcpy9TvMHSAfU4VnPxyvNWSJcj0hK6rub9');
 const client = new paypal.core.PayPalHttpClient(environment);
 
+app.get('/test', (req, res) => {
+  res.send('Hello World');
+})
 // Create order endpoint
 app.post('/create-order', async (req, res) => {
   const request = new paypal.orders.OrdersCreateRequest();
