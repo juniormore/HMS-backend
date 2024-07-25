@@ -289,6 +289,41 @@ app.post('/booking', async (req, res) => {
 	}
 }); 
 
+// api endpoint to get a user's list upcoming bookings
+app.get('/upcomingBookings/:guest_id', async (req, res) => {
+	const { guest_id } = req.params;
+
+	// get current date in form yyyy-mm-dd
+	const today = new Date();
+
+	try{
+		const result = await db.query(`
+			SELECT 
+				b."checkIn_date", 
+				b."checkOut_date", 
+				h."Name" AS hotel_name, 
+				p."Amount", 
+				rt."NumberOfGuests"
+			FROM public."Bookings" b
+			JOIN public."Room" r ON b."Room_ID" = r."Room_ID"
+			JOIN public."Hotel" h ON r."Hotel_ID" = h."Hotel_ID"
+			JOIN public."Payment" p ON b."Payment_ID" = p."Payment_ID"
+			JOIN public."Room_Type" rt ON r."RoomType_ID" = rt."RoomType_ID"
+			WHERE 
+				b."checkIn_date" >= '${today.toISOString().split('T')[0]}'
+				AND b."Guest_ID" = '${guest_id}' 
+				AND b."Status" = 'Confirmed';
+		`);
+
+		res.json(result.rows);
+		console.log(result.rows);
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+
+});
+
 // function to send sms notification
 async function smsNotification(req, res, phone_number, message) {
 	try {
