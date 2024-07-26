@@ -344,6 +344,57 @@ app.put('/cancelBooking/:booking_id', async (req, res) => {
 	}
 });
 
+// api endpoint to modify booking dates
+app.put('/modifyBooking/:booking_id', async (req, res) => {
+	const booking_id = req.params.booking_id;
+	const { new_check_in_date, new_check_out_date } = req.body;
+  
+	try {
+	  // Retrieve the original booking dates
+	  const original_booking = await db.query(
+		`SELECT 
+			"checkIn_date", 
+			"checkOut_date" 
+		FROM 
+			public."Bookings" 
+		WHERE 
+			"Booking_ID" = ${booking_id};`
+	  );
+  
+	  if (original_booking.rowCount === 0) {
+		return res.status(404).json({ error: 'Booking not found' });
+	  }
+  
+	  const original_check_in_date = new Date(original_booking.rows[0].checkIn_date);
+	  const original_check_out_date = new Date(original_booking.rows[0].checkOut_date);
+  
+	  // Calculate the number of nights for the original and new bookings
+	  const original_nights = Math.ceil((original_check_out_date - original_check_in_date) / (1000 * 60 * 60 * 24));
+	  const new_nights = Math.ceil((new Date(new_check_out_date) - new Date(new_check_in_date)) / (1000 * 60 * 60 * 24));
+  
+	  // Validate the number of nights
+	  if (original_nights !== new_nights) {
+		return res.status(400).json({ error: 'The new booking dates must have the same number of nights as the original booking' });
+	  }
+  
+	  // Update the booking dates
+	  await db.query(
+		`UPDATE 
+			public."Bookings" 
+		SET 
+			"checkIn_date" = '${new_check_in_date}', 
+			"checkOut_date" = '${new_check_out_date}' 
+		WHERE 
+			"Booking_ID" = ${booking_id};`
+	  );
+  
+	  res.json({ message: 'Booking dates updated successfully' });
+	} catch (error) {
+	  console.error(error);
+	  res.status(500).json({ error: 'Internal server error' });
+	}
+  });
+
 // function to send sms notification
 async function smsNotification(req, res, phone_number, message) {
 	try {
