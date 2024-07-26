@@ -299,11 +299,12 @@ app.get('/upcomingBookings/:guest_id', async (req, res) => {
 	try{
 		const result = await db.query(`
 			SELECT 
+				b."Booking_ID" AS booking_id,
 				b."checkIn_date", 
 				b."checkOut_date", 
 				h."Name" AS hotel_name, 
-				p."Amount", 
-				rt."NumberOfGuests"
+				p."Amount" AS amount, 
+				rt."NumberOfGuests" AS number_of_guests
 			FROM public."Bookings" b
 			JOIN public."Room" r ON b."Room_ID" = r."Room_ID"
 			JOIN public."Hotel" h ON r."Hotel_ID" = h."Hotel_ID"
@@ -322,6 +323,25 @@ app.get('/upcomingBookings/:guest_id', async (req, res) => {
 		res.status(500).send('Internal Server Error');
 	}
 
+});
+
+// api endpoint to cancel a booking
+app.put('/cancelBooking/:booking_id', async (req, res) => {
+	const { booking_id } = req.params;
+
+	try{
+		const result = await db.query(`
+			UPDATE public."Bookings"
+			SET "Status" = 'Cancelled'
+			WHERE "Booking_ID" = ${booking_id};
+		`);
+
+		res.status(200).send('Booking cancelled successfully');
+		console.log(result.rows);
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
 });
 
 // function to send sms notification
