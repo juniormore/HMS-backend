@@ -189,6 +189,7 @@ app.get('/upcomingBookings', async (req, res) => {
 			SELECT 
 				n."Full_Name",
 				b."booking_Date",
+				b."Booking_ID",
 				b."checkIn_date", 
 				b."checkOut_date", 
 				h."Name" AS hotel_name,
@@ -202,6 +203,7 @@ app.get('/upcomingBookings', async (req, res) => {
 			JOIN public."Hotel" h ON r."Hotel_ID" = h."Hotel_ID"
 			JOIN public."Payment" p ON b."Payment_ID" = p."Payment_ID"
 			JOIN public."Room_Type" rt ON r."RoomType_ID" = rt."RoomType_ID"
+			WHERE b."Status" NOT IN ('Cancelled','Checked-out')
 		`);
 
 		res.json(result.rows);
