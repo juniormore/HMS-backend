@@ -204,6 +204,7 @@ app.get('/upcomingBookings', async (req, res) => {
 			JOIN public."Payment" p ON b."Payment_ID" = p."Payment_ID"
 			JOIN public."Room_Type" rt ON r."RoomType_ID" = rt."RoomType_ID"
 			WHERE b."Status" NOT IN ('Cancelled','Checked-out')
+			
 		`);
 
 		res.json(result.rows);
@@ -214,6 +215,82 @@ app.get('/upcomingBookings', async (req, res) => {
 	}
 
 });
+
+// api endpoint to cancel a booking
+app.put('/checkIn/:booking_id', async (req, res) => {
+	const { booking_id } = req.params;
+
+	try{
+		const result = await db.query(`
+			UPDATE public."Bookings"
+			SET "Status" = 'Checked-in'
+			WHERE "Booking_ID" = ${booking_id};
+		`);
+
+		res.status(200).send('Checked-in successfully');
+		console.log(result.rows);
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+});
+
+// api endpoint to cancel a booking
+app.put('/checkOut/:booking_id', async (req, res) => {
+	const { booking_id } = req.params;
+
+	try{
+		const result = await db.query(`
+			UPDATE public."Bookings"
+			SET "Status" = 'Checked-out'
+			WHERE "Booking_ID" = ${booking_id};
+		`);
+
+		res.status(200).send('Checked-out successfully');
+		console.log(result.rows);
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+});
+
+app.put('/confirmBooking/:booking_id', async (req, res) => {
+	const { booking_id } = req.params;
+
+	try{
+		const result = await db.query(`
+			UPDATE public."Bookings"
+			SET "Status" = 'Confirmed'
+			WHERE "Booking_ID" = ${booking_id};
+		`);
+
+		res.status(200).send('Booking confirmed successfully');
+		console.log(result.rows);
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+});
+
+app.put('/pending/:booking_id', async (req, res) => {
+	const { booking_id } = req.params;
+
+	try{
+		const result = await db.query(`
+			UPDATE public."Bookings"
+			SET "Status" = 'Pending'
+			WHERE "Booking_ID" = ${booking_id};
+		`);
+
+		res.status(200).send('Success!');
+		console.log(result.rows);
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+});
+
+
 
 
 
