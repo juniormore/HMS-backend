@@ -290,7 +290,25 @@ app.put('/pending/:booking_id', async (req, res) => {
 	}
 });
 
+// api endpoint to get feedback data for pie chart
+app.get('/feedbackData', async (req, res) => {
+	try{
+		const result = await db.query(`
+			SELECT 
+				discovery_source AS type,
+				(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM public."Feedback")) AS percentage
+			FROM 
+				public."Feedback"
+			GROUP BY 
+				discovery_source;`
+		);
 
+		res.json(result.rows);
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+});
 
 
 
