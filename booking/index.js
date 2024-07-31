@@ -266,7 +266,7 @@ app.post('/booking', async (req, res) => {
 				"Status", 
 				"Room_ID", 
 				"Guest_ID",
-        "Payment_ID")
+        		"Payment_ID")
 			VALUES (
 				'${booking_date}', 
 				'${check_in_date}', 
@@ -274,13 +274,13 @@ app.post('/booking', async (req, res) => {
 				'${status}', 
 				${room_id}, 
 				'${guest_id}',
-        '${payment_id}');
+        		'${payment_id}');
 			`);
 
 		res.status(201).send('Booking created successfully');
 		console.log(result.rows);
 
-		smsNotification(req, res, phone_number, message);
+		//smsNotification(req, res, phone_number, message);
 		//sendEmailNotification(req, res, email, message);
 
 	}catch(err){
