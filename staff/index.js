@@ -345,6 +345,29 @@ app.get('/occupancyData', async (req, res) => {
 	}
 });
 
+// api endpoint to get a user's list upcoming bookings
+app.get('/showRooms', async (req, res) => {
+
+	// get current date in form yyyy-mm-dd
+	//const today = new Date();
+
+	try{
+		const result = await db.query(`
+			SELECT rt."RoomName",
+			r."Room_ID"
+			FROM public."Room_Type" rt, public."Room" r
+			WHERE rt."RoomType_ID" = r."RoomType_ID"
+		`);
+
+		res.json(result.rows);
+		console.log(result.rows);
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+
+});
+
 
 
 app.listen(port, () => {
