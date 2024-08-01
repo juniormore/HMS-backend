@@ -310,6 +310,41 @@ app.get('/feedbackData', async (req, res) => {
 	}
 });
 
+// api endpoint to get occupancy data
+app.get('/occupancyData', async (req, res) => {
+
+	const current_year = new Date().getFullYear();
+
+	try{
+		const result = await db.query(`
+			SELECT 
+				EXTRACT(MONTH FROM b."checkIn_date") AS month,
+				COUNT(*) AS rate
+			FROM 
+				public."Bookings" b
+			WHERE 
+				EXTRACT(YEAR FROM b."checkIn_date") = ${current_year}
+			GROUP BY 
+				month
+			ORDER BY 
+				month;	
+		`);
+		
+		const data = result.rows;
+
+		// replace month number with month name
+		const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+		for (const row of data) {
+			row.month = months[row.month - 1];
+		}
+		res.json(data);
+
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+});
+
 
 
 app.listen(port, () => {
