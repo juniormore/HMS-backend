@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-//const notificationapi = require("notificationapi-node-server-sdk").default;
+const notificationapi = require("notificationapi-node-server-sdk").default;
 const db = require('./db');
 
 require('dotenv').config();
@@ -13,74 +13,46 @@ const port = 3333
 app.use(express.json());
 app.use(cors());
 
-app.get('/test', (req, res) => {
+app.get('/test', async (req, res) => {
   res.send('Hello World!')
 })
 
-// api endpoint to create a booking
-app.post('/booking', async (req, res) => {
-	const { booking_date, check_in_date, check_out_date, status, room_id, guest_id, payment_id, phone_number, email } = req.body;
-	const message = "Your booking has been confirmed. Thank you for choosing us."
+//a function to get the current date and format it
+function getDate(){
+	const date = new Date();
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
 
-	try{
-		
-        const query = 'INSERT INTO "Bookings" ("booking_Date", "checkIn_date", "checkOut_date", "Status", "Room_ID", "Guest_ID") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *';
-    	const values = [booking_date, check_in_date, check_out_date, status, room_id, guest_id, payment_id, phone_number, email];
-    
-    
-        const result = await db.query(query, values);
-        
+	return `${year}-${month}-${day}`;
+};
 
-		res.status(201).send('Booking created successfully');
-		console.log(result.rows);
-
-		//smsNotification(req, res, phone_number, message);
-		//sendEmailNotification(req, res, email, message);
-
-	}catch(err){
-		console.error(err);
-		res.status(500).send('Internal Server Error');
+//A function to generate random guest ID
+function generateRandomID() {
+	const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	let randomID = '';
+	for (let i = 0; i < 32; i++) {
+		const randomIndex = Math.floor(Math.random() * characters.length);
+		randomID += characters[randomIndex];
 	}
-});
-
-// api endpoint to retrieve information about a specific room using its room id
-app.get('/roomInformation/:room_id', async (req, res) => {
-	const { room_id }  = req.params;
-
-  try{
-    const result = await db.query(`
-        SELECT 
-            rt."RoomName" AS room_name,
-            rt."Description1" AS room_description_1,
-            rt."Description2" AS room_description_2,
-            rt."NumberOfGuests" AS number_of_guests,
-            rt."Price" AS room_price,
-            rt."Image1" As image_1,
-            rt."Image2" As image_2,
-            rt."Bedrooms" AS bedrooms,
-            rt."Bathrooms" AS bathrooms
-        FROM 
-            public."Room_Type" rt
-        JOIN 
-            public."Room" r ON rt."RoomType_ID" = r."RoomType_ID"
-        WHERE
-            r."Room_ID" = ${room_id}
-    `);
-
-    res.json(result.rows);
-    console.log(result.rows);
-  }catch(err){
-    console.error(err);
-    res.status(500).send('Internal Server Error');
-  }
-});
-
+	return randomID;
+}
 
 // api endpoint to create a guest
-app.post('/guest', async (req, res) => {
+app.post('/reserveBooking', async (req, res) => {
+	const message = "Your booking has been confirmed. Thank you for choosing us."
+	const { firstName,
+		lastName,
+		email,
+		phone_number,
+		hotel_id,
+		checkInDate,
+		checkOutDate,
+		room_id,
+		newStatus} = req.body;
 
-	const { guest_id, email, phone_number, full_name, hotel_id } = req.body;
-
+	const guest_id = generateRandomID();
+	const booking_Date = getDate();
 	// check if guest already exists
 	try{
 		const result = await db.query(`
@@ -97,7 +69,8 @@ app.post('/guest', async (req, res) => {
 		res.status(500).send('Internal Server Error');
 	}
 		
-
+	const full_name = firstName + " " + lastName;
+	console.log({full_name, email, phone_number, guest_id});
 	try{
 		const result = await db.query(`
 			INSERT INTO public."Guest"(
@@ -112,37 +85,12 @@ app.post('/guest', async (req, res) => {
 				'${guest_id}'); 
 		`);
 
-		res.status(201).send('Guest created successfully');
+		//res.status(201).send('Guest created successfully');
 		console.log(result.rows);
 	}catch(err){
 		console.error(err);
 		res.status(500).send('Internal Server Error');
 	}
-
-	const hotelGuest = (hotel_id) => {
-		try{
-			const result = db.query(`
-				INSERT INTO public."Hotel_Guest"(
-					"Hotel_ID", 
-					"Guest_ID") 
-				VALUES (
-					${hotel_id},
-					'${guest_id}'); 
-			`);
-			console.log(result.rows);
-			res.status(201).send('Hotel Guest created successfully');
-		}catch(err){
-			console.error(err);
-			res.status(500).send('Internal Server Error');
-		}
-	
-	}
-
-});
-
-// create Hotel_Guest table record
-app.post('/hotelGuest', async (req, res) => {
-	const { hotel_id, guest_id } = req.body;
 
 	// check if hotel guest already exists
 	try{
@@ -152,14 +100,14 @@ app.post('/hotelGuest', async (req, res) => {
 
 		if(result.rows.length > 0){
 			console.log('Hotel Guest already exists');
-			res.status(200).send('Hotel Guest already exists');
+			//res.status(200).send('Hotel Guest already exists');
 			return;
 		}
 	}catch(err){
 		console.error(err);
 		res.status(500).send('Internal Server Error');
 	}
-
+    
 	try{
 		const result = await db.query(`
 			INSERT INTO public."Hotel_Guest"(
@@ -170,12 +118,29 @@ app.post('/hotelGuest', async (req, res) => {
 				'${guest_id}'); 
 		`);
 
-		res.status(201).send('Hotel Guest created successfully');
+		//res.status(201).send('Hotel Guest created successfully');
 		console.log(result.rows);
 	}catch(err){
 		console.error(err);
 		res.status(500).send('Internal Server Error');
 	}
+
+	try{
+
+		const query = 'INSERT INTO "Bookings" ("booking_Date", "checkIn_date", "checkOut_date", "Room_ID", "Guest_ID" , "Status") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *';
+    	const values = [booking_Date, checkInDate, checkOutDate, room_id, guest_id, newStatus];
+    
+    
+    const result = await db.query(query, values);
+    	
+	smsNotification(req, res, phone_number, message);
+	sendEmailNotification(req, res, email, message);
+
+    res.status(201).json({ message: 'Booking created successfully!', booking: result.rows[0] });
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    res.status(500).json({ error: 'An error occurred while creating the booking.' });
+  }
 });
 
 // api endpoint to get a user's list upcoming bookings
@@ -194,14 +159,12 @@ app.get('/upcomingBookings', async (req, res) => {
 				b."checkOut_date", 
 				h."Name" AS hotel_name,
 				rt."RoomName",
-				p."Amount", 
 				rt."NumberOfGuests",
 				b."Status"
 			FROM public."Bookings" b
 			JOIN public."Guest" n ON b."Guest_ID" = n."Guest_ID"
 			JOIN public."Room" r ON b."Room_ID" = r."Room_ID"
 			JOIN public."Hotel" h ON r."Hotel_ID" = h."Hotel_ID"
-			JOIN public."Payment" p ON b."Payment_ID" = p."Payment_ID"
 			JOIN public."Room_Type" rt ON r."RoomType_ID" = rt."RoomType_ID"
 			WHERE b."Status" NOT IN ('Cancelled','Checked-out')
 			
@@ -345,6 +308,81 @@ app.get('/occupancyData', async (req, res) => {
 	}
 });
 
+// api endpoint to get a user's list upcoming bookings
+app.get('/showRooms/:hotel_id', async (req, res) => {
+	const { hotel_id }  = req.params;
+	// get current date in form yyyy-mm-dd
+	//const today = new Date();
+
+	try{
+		const result = await db.query(`
+			SELECT rt."RoomName",
+			r."Room_ID"
+			FROM public."Room_Type" rt, public."Room" r
+			WHERE rt."RoomType_ID" = r."RoomType_ID"
+			AND r."Hotel_ID" = ${hotel_id}
+		`);
+
+		res.json(result.rows);
+		//console.log(result.rows);
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+
+});
+
+
+// function to send sms notification
+async function smsNotification(req, res, phone_number, message) {
+	try {
+		const url = 'https://rest.kaelekae.com/';
+		const data = { 
+			action : "send_nnollo_sms",
+			token: process.env.SMS_API_TOKEN,
+			sender_id: process.env.SMS_SENDER_ID,
+			sms_content: message,
+			destinations: [
+				phone_number
+			]
+	  	};
+	  
+	  const response = await axios.post(url, data);
+	  res.status(200);
+	} catch (error) {
+	  console.error('Error sending data:', error);
+	  res.status(500).json({ message: 'Error' });
+	}
+}
+
+// function to send email notification
+async function sendEmailNotification(req, res, email, message){
+	try{
+		notificationapi.init(
+			process.env.NOTIFICATION_API_CLIENT_ID, // clientId
+			process.env.NOTIFICATION_API_CLIENT_SECRET // clientSecret
+		  )
+		  
+		  notificationapi.send({
+			notificationId: 'booking_confirmation',
+			user: {
+			  id: email,
+			  email: email,
+			  number: "77777777"
+			},
+			mergeTags: {
+			  "comment": message
+			}
+		  })
+
+		  res.status(200);
+
+	}catch(err){
+		console.error(err);
+		res.status(500).send('Internal Server Error');
+	}
+	
+}  
 
 
 app.listen(port, () => {
